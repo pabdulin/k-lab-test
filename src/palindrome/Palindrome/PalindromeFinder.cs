@@ -8,12 +8,12 @@ namespace Palindrome
         {
             if (text == null)
             {
-                throw new ArgumentNullException();
+                throw new ArgumentNullException("text");
             }
 
             if (text == string.Empty)
             {
-                throw new ArgumentOutOfRangeException();
+                throw new ArgumentOutOfRangeException("text");
             }
 
             // performance monitor

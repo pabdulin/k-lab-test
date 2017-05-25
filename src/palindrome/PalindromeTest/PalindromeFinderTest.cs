@@ -10,7 +10,7 @@ namespace PalindromeTest
 
         private string[] _testPalindromes = new string[]
         {
-            "c", "cbabc", "aczzca", "arozaupalanalapuazora", "arozaupalanalapuazoraarozaupalanalapuazora"
+            "c", "cbabc", "aczzca", "arozaupalanalapuazora", "arozaupalanalapuazoraarozaupalanalapuazora", "aaaaaaaaaaaaaaaaaaaaaaaaaaa"
         };
 
         private string[] _testNotPalindromes = new string[]
@@ -30,19 +30,53 @@ namespace PalindromeTest
         [TestMethod]
         public void ShouldPassLargeTest()
         {
-            var input = "sometextarozaupalanalapuazorasomeanotherarozaupalanalapuazoraarozaupalanalapuazoratext";
+            var input = "sometextarozaupalanalapuazorasomeanotherzzzzzzzzzzzzzzzzzzzzzzzzzzzzarozaupalanalapuazoraarozaupalanalapuazoratextsometextarozaupalanalapuazorasomeanotherzzzzzzzzzzzzzzzzzzzzzzzzzzzzarozaupalanalapuazfsdoraarozaupalanalapuazoratext";
             var expected = "arozaupalanalapuazoraarozaupalanalapuazora";
             var result = _target.SearchPalindrome(input);
             Assert.AreEqual(expected, result);
         }
 
         [TestMethod]
+        public void ShouldPassBarrierTest()
+        {
+            {
+                var input = "aaaaaaaaaaaaaaaaaaaaaaaaabaaaa";
+                var expected = "aaaaaaaaaaaaaaaaaaaaaaaaa";
+                var result = _target.SearchPalindrome(input);
+                Assert.AreEqual(expected, result);
+            }
+
+            {
+                var input = "aabaaaaaaaaaaaaaaaaaaaaaaaaaaa";
+                var expected = "aaaaaaaaaaaaaaaaaaaaaaaaaaa";
+                var result = _target.SearchPalindrome(input);
+                Assert.AreEqual(expected, result);
+            }
+        }
+
+        [TestMethod]
         public void ShouldReturnLeftmostIfSameLength()
         {
-            var input = "zraabbds";
-            var expected = "aa";
-            var result = _target.SearchPalindrome(input);
-            Assert.AreEqual(expected, result);
+            { 
+                var input = "zraabbds";
+                var expected = "aa";
+                var result = _target.SearchPalindrome(input);
+                Assert.AreEqual(expected, result);
+            }
+
+            {
+                var input = "cba";
+                var expected = "c";
+                var result = _target.SearchPalindrome(input);
+                Assert.AreEqual(expected, result);
+            }
+
+            {
+                var input = "aaabbbccc";
+                var expected = "aaa";
+                var result = _target.SearchPalindrome(input);
+                Assert.AreEqual(expected, result);
+            }
         }
 
         [TestMethod]
@@ -63,15 +97,6 @@ namespace PalindromeTest
                 var result = _target.SearchPalindrome(input);
                 Assert.AreEqual(expected, result);
             }
-        }
-
-        [TestMethod]
-        public void ShouldWorkOnSingleDigitLeftmost()
-        {
-            var input = "cba";
-            var expected = "c";
-            var result = _target.SearchPalindrome(input);
-            Assert.AreEqual(expected, result);
         }
 
         [TestMethod]
