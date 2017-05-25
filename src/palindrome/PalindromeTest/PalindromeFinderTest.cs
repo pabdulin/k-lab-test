@@ -10,7 +10,7 @@ namespace PalindromeTest
 
         private string[] _testPalindromes = new string[]
         {
-            "c", "cbabc", "aczzca", "arozaupalanalapuazora"
+            "c", "cbabc", "aczzca", "arozaupalanalapuazora", "arozaupalanalapuazoraarozaupalanalapuazora"
         };
 
         private string[] _testNotPalindromes = new string[]
@@ -18,12 +18,20 @@ namespace PalindromeTest
            "ab", "abc", "arozaupaalanalapuazora"
         };
 
-
         [TestMethod]
         public void ShouldPassSampleTest()
         {
             var input = "sometextarozaupalanalapuazorasomeanothertext";
             var expected = "arozaupalanalapuazora";
+            var result = _target.SearchPalindrome(input);
+            Assert.AreEqual(expected, result);
+        }
+
+        [TestMethod]
+        public void ShouldPassLargeTest()
+        {
+            var input = "sometextarozaupalanalapuazorasomeanotherarozaupalanalapuazoraarozaupalanalapuazoratext";
+            var expected = "arozaupalanalapuazoraarozaupalanalapuazora";
             var result = _target.SearchPalindrome(input);
             Assert.AreEqual(expected, result);
         }
@@ -72,7 +80,7 @@ namespace PalindromeTest
             var expected = true;
             foreach (var input in _testPalindromes)
             {
-                var result = PalindromeFinder.IsPalindrome(input);
+                var result = PalindromeFinder.IsPalindrome(input, 0, input.Length);
                 Assert.AreEqual(expected, result);
             }
         }
@@ -83,7 +91,7 @@ namespace PalindromeTest
             var expected = false;
             foreach (var input in _testNotPalindromes)
             {
-                var result = PalindromeFinder.IsPalindrome(input);
+                var result = PalindromeFinder.IsPalindrome(input, 0, input.Length);
                 Assert.AreEqual(expected, result);
             }
         }

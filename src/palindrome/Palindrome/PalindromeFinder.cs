@@ -1,20 +1,7 @@
 ﻿using System;
-using System.Collections.Generic;
 
 namespace Palindrome
 {
-    internal struct finder_match
-    {
-        public finder_match(int position, int length)
-        {
-            Position = position;
-            Length = length;
-        }
-
-        public int Position;
-        public int Length;
-    }
-
     public class PalindromeFinder
     {
         public string SearchPalindrome(string text)
@@ -29,43 +16,51 @@ namespace Palindrome
                 throw new ArgumentOutOfRangeException();
             }
 
-            // leftmost character is always good result
-            finder_match bestMatch = new finder_match(0, 1);
+            // performance monitor
+            int testCount = 0;
 
-            for (int startIndex = 0; startIndex < text.Length; startIndex += 1)
+            // leftmost character is always good result
+            int bestMatchPos = 0;
+            int bestMatchLength = 1;
+
+            // walking left to right
+            for (int leftPos = 0; leftPos < text.Length; leftPos += 1)
             {
-                int leftPos = startIndex;
-                int rightPos = text.Length;
-                while (leftPos < rightPos - 1) // -1 for ignoring substrings lenght of 1
+                // while it's possible to get a better match
+                for (int rightPos = text.Length; leftPos < rightPos - bestMatchLength; rightPos -= 1)
                 {
-                    var test = text.Substring(leftPos, rightPos - leftPos);
-                    if (IsPalindrome(test))
+                    // performance hint, do not check if border symbols don't match
+                    if (text[leftPos] != text[rightPos - 1])
                     {
-                        if (bestMatch.Length < test.Length)
-                        {
-                            bestMatch = new finder_match(leftPos, test.Length);
-                        }
+                        continue;
                     }
-                    rightPos -= 1;
+
+                    var length = rightPos - leftPos;
+                    testCount += 1;
+                    if (IsPalindrome(text, leftPos, length))
+                    {
+                        bestMatchPos = leftPos;
+                        bestMatchLength = length;
+                    }
                 }
             }
 
-            string result = text.Substring(0, 1); 
-            if(bestMatch.Length > 0)
-            {
-                result = text.Substring(bestMatch.Position, bestMatch.Length);
-            }
-
+            var result = text.Substring(bestMatchPos, bestMatchLength);
             return result;
         }
 
-        public static bool IsPalindrome(string text)
+        public static bool IsPalindrome(string text, int startPos, int length)
         {
+            var start = startPos;
+            var middle = startPos + (length / 2);
+            var end = startPos + length - 1;
+
             var result = true;
 
-            for (int i = 0; i < text.Length / 2; i += 1)
+            for (int i = startPos; i < middle; i += 1)
             {
-                if (text[i] != text[text.Length - 1 - i])
+                var offset = i - startPos;
+                if (text[start + offset] != text[end - offset])
                 {
                     result = false;
                     break;
