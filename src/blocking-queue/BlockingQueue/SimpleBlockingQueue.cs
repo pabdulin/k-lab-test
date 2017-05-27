@@ -8,14 +8,18 @@ namespace BlockingQueue
         private bool _isDisabled = false;
         private Queue<object> _store = new Queue<object>();
         private readonly AutoResetEvent _empty = new AutoResetEvent(false);
+        private readonly object _lock = new object();
 
         /// <summary>
         /// Put кладет новый элемент в очередь.
         /// </summary>
         public void Put(object o)
         {
-            _store.Enqueue(o);
-            _empty.Set();
+            lock (_lock)
+            {
+                _store.Enqueue(o);
+                _empty.Set();
+            }
         }
 
         /// <summary>
@@ -29,14 +33,17 @@ namespace BlockingQueue
                 _empty.WaitOne();
             }
 
-            if (_store.Count > 0)
+            lock (_lock)
             {
-                var result = _store.Dequeue();
-                return result;
-            }
-            else
-            {
-                return null;
+                if (_store.Count > 0)
+                {
+                    var result = _store.Dequeue();
+                    return result;
+                }
+                else
+                {
+                    return null;
+                }
             }
         }
 
@@ -47,8 +54,11 @@ namespace BlockingQueue
         /// </summary>
         public void Disable()
         {
-            _isDisabled = true;
-            _empty.Set();
+            lock (_lock)
+            {
+                _isDisabled = true;
+                _empty.Set();
+            }
         }
     }
 }
