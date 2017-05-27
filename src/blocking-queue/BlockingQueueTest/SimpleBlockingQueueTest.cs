@@ -26,8 +26,8 @@ namespace BlockingQueueTest
         public void ShouldReturnNullAfterDisabling()
         {
             SimpleBlockingQueue target = new SimpleBlockingQueue();
-            //int testValue = 1;
-            //target.Put(testValue);
+            int testValue = 1;
+            target.Put(testValue);
             target.Disable();
             var testValueBack = target.Get();
             Assert.AreEqual(null, testValueBack);

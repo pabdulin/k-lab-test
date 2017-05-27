@@ -17,6 +17,7 @@ namespace BlockingQueueApp
 
             if (Debugger.IsAttached)
             {
+                Console.WriteLine("---");
                 Console.WriteLine("Press any key to exit..");
                 Console.ReadKey();
             }
