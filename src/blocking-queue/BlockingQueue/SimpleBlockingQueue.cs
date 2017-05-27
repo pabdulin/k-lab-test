@@ -58,9 +58,9 @@ namespace BlockingQueue
             if (!_isDisabled)
             {
                 Trace.WriteLine($"T{Thread.CurrentThread.ManagedThreadId} Get: Queue not disabled, wait..");
-                _waitingThreads += 1;
+                Interlocked.Increment(ref _waitingThreads);
                 _empty.WaitOne();
-                _waitingThreads -= 1;
+                Interlocked.Decrement(ref _waitingThreads);
                 lock (_lock)
                 {
                     if (_isDisabled)
@@ -88,7 +88,7 @@ namespace BlockingQueue
         public void Disable()
         {
 #if DEBUG
-            Thread.Sleep(rnd.Next(OPERATION_PAUSE * 2));
+            Thread.Sleep(rnd.Next(OPERATION_PAUSE * 8));
 #endif
             lock (_lock)
             {
@@ -101,7 +101,7 @@ namespace BlockingQueue
 
                 _isDisabled = true;
                 // TODO free all waiting threads
-                var threadsToFree = Volatile.Read(ref _waitingThreads);
+                var threadsToFree = _waitingThreads;
                 if (threadsToFree > 0)
                 {
                     var semCount = _empty.Release(threadsToFree);
