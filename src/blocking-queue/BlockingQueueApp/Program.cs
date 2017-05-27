@@ -1,22 +1,81 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using BlockingQueue;
+using System;
 using System.Diagnostics;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using System.Threading;
 
 namespace BlockingQueueApp
 {
-    class Program
+    public class Program
     {
-        static void Main(string[] args)
+        private static readonly SimpleBlockingQueue _bq = new SimpleBlockingQueue();
+
+        public static void Main(string[] args)
         {
             Trace.Listeners.Add(new ConsoleTraceListener());
+
+            TestMultithreadReadWrite();
 
             if (Debugger.IsAttached)
             {
                 Console.WriteLine("Press any key to exit..");
                 Console.ReadKey();
+            }
+        }
+
+        private static void TestMultithreadReadWrite()
+        {
+            const int THREAD_COUNT = 5;
+
+            Thread[] putThreads = new Thread[THREAD_COUNT - 2];
+            Thread[] getThreads = new Thread[THREAD_COUNT + 2];
+            Thread[] disableThreads = new Thread[THREAD_COUNT - 2];
+
+            for (int i = 0; i < getThreads.Length; i += 1)
+            {
+                getThreads[i] = new Thread(() =>
+                {
+                    _bq.Get();
+                    _bq.Get();
+                });
+                getThreads[i].Start();
+
+            }
+
+            for (int i = 0; i < putThreads.Length; i += 1)
+            {
+                var capture = i;
+                putThreads[i] = new Thread(() =>
+                {
+                    _bq.Put(capture);
+                    _bq.Put(capture + putThreads.Length);
+                });
+                putThreads[i].Start();
+
+            }
+
+            for (int i = 0; i < disableThreads.Length; i += 1)
+            {
+                disableThreads[i] = new Thread(() =>
+                {
+                    _bq.Disable();
+                });
+                disableThreads[i].Start();
+
+            }
+
+            for (int i = 0; i < putThreads.Length; i += 1)
+            {
+                putThreads[i].Join();
+            }
+
+            for (int i = 0; i < getThreads.Length; i += 1)
+            {
+                getThreads[i].Join();
+            }
+
+            for (int i = 0; i < disableThreads.Length; i += 1)
+            {
+                disableThreads[i].Join();
             }
         }
     }

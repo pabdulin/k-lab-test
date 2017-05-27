@@ -50,5 +50,11 @@
   <ItemGroup>
     <Folder Include="Properties\" />
   </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\BlockingQueue\BlockingQueue.csproj">
+      <Project>{2bbc9353-ac1e-48cf-b791-50bd776ec86f}</Project>
+      <Name>BlockingQueue</Name>
+    </ProjectReference>
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>
