@@ -9,8 +9,6 @@ namespace BlockingQueue
     {
         private bool _isDisabled = false;
         private Queue<object> _store = new Queue<object>();
-        //private readonly AutoResetEvent _empty = new AutoResetEvent(false);
-        //private readonly Semaphore _empty = new Semaphore(0, int.MaxValue);
         private readonly object _lock = new object();
         private int _waitingThreads = 0;
 #if DEBUG
@@ -23,34 +21,35 @@ namespace BlockingQueue
         /// </summary>
         public void Put(object o)
         {
+            Trace.WriteLine($"T{Thread.CurrentThread.ManagedThreadId,3} Put {o}: enter");
 #if DEBUG
             Thread.Sleep(rnd.Next(OPERATION_PAUSE));
 #endif
-            Trace.WriteLine($"T{Thread.CurrentThread.ManagedThreadId} Put: ({o})");
-            if (!_isDisabled) // fast check
+            // fast unsafe check
+            if (!_isDisabled)
             {
                 lock (_lock)
                 {
-                    if (_isDisabled) // check if not locked by this time
+                    // check if was disabled while we were waiting
+                    if (_isDisabled)
                     {
-                        Trace.WriteLine($"T{Thread.CurrentThread.ManagedThreadId} Put: Queue is disabled, return");
-                        return;
+                        Trace.WriteLine($"T{Thread.CurrentThread.ManagedThreadId,3} Put {o}: Queue was disabled (in lock)");
                     }
-                    _store.Enqueue(o);
-                    Trace.WriteLine($"T{Thread.CurrentThread.ManagedThreadId} Put: About to signal..");
-                    //var semCount = _empty.Release(); // semaphore
-                    Monitor.Pulse(_lock);
-
-                    //Trace.WriteLine($"T{Thread.CurrentThread.ManagedThreadId} Put: PREV_SEM={semCount}"); // semaphore
+                    else
+                    {
+                        _store.Enqueue(o);
+                        Trace.WriteLine($"T{Thread.CurrentThread.ManagedThreadId,3} Put {o}: value stored");
+                        Trace.WriteLine($"T{Thread.CurrentThread.ManagedThreadId,3} Put {o}: About to pulse..");
+                        // release one thread
+                        Monitor.Pulse(_lock);
+                    }
                 }
             }
-#if DEBUG
             else
             {
-                Trace.WriteLine($"T{Thread.CurrentThread.ManagedThreadId} Put: Queue is disabled (no lock)");
+                Trace.WriteLine($"T{Thread.CurrentThread.ManagedThreadId,3} Put {o}: Queue is disabled (fast check)");
             }
-#endif
-            Trace.WriteLine($"T{Thread.CurrentThread.ManagedThreadId} Put: exit");
+            Trace.WriteLine($"T{Thread.CurrentThread.ManagedThreadId,3} Put {o}: exit");
         }
 
         /// <summary>
@@ -59,43 +58,45 @@ namespace BlockingQueue
         /// </summary>
         public object Get()
         {
+            Trace.WriteLine($"T{Thread.CurrentThread.ManagedThreadId,3} Get: enter");
 #if DEBUG
             Thread.Sleep(rnd.Next(OPERATION_PAUSE));
 #endif
-            Trace.WriteLine($"T{Thread.CurrentThread.ManagedThreadId} Get: ( )");
             object result = null;
+            // fast unsafe check
             if (!_isDisabled)
             {
-                Trace.WriteLine($"T{Thread.CurrentThread.ManagedThreadId} Get: Queue not disabled, wait..");
-                Interlocked.Increment(ref _waitingThreads);
-                //_empty.WaitOne(); // semaphore
+                Trace.WriteLine($"T{Thread.CurrentThread.ManagedThreadId,3} Get: queue not disabled (fast check)");
                 lock (_lock)
                 {
+                    _waitingThreads += 1;
+                    // wait while empty queue and but not disabled
+                    // will exit loop, if there is new element in queue,
+                    // or queue was disabled
                     while (_store.Count == 0 && !_isDisabled)
                     {
                         Monitor.Wait(_lock);
                     }
                     _waitingThreads -= 1;
+
+                    // check if was disabled while we were waiting for next item
                     if (_isDisabled)
                     {
-                        Trace.WriteLine($"T{Thread.CurrentThread.ManagedThreadId} Get: Wait complete, but queue is disabled now");
+                        Trace.WriteLine($"T{Thread.CurrentThread.ManagedThreadId,3} Get: wait complete, but queue is disabled now (in lock)");
                     }
                     else
                     {
-                        Trace.WriteLine($"T{Thread.CurrentThread.ManagedThreadId} Get: Wait complete, proceed to get value");
+                        Trace.WriteLine($"T{Thread.CurrentThread.ManagedThreadId,3} Get: wait complete, proceed to get value");
                         result = _store.Dequeue();
                     }
                 }
             }
-#if DEBUG
             else
             {
-                Trace.WriteLine($"T{Thread.CurrentThread.ManagedThreadId} Get: Queue is disabled (no lock)");
+                Trace.WriteLine($"T{Thread.CurrentThread.ManagedThreadId,3} Get: queue is disabled (no lock)");
             }
-#endif
-
-            var resStr = result ?? "'null'";
-            Trace.WriteLine($"T{Thread.CurrentThread.ManagedThreadId} Get: exit, got value: {resStr}");
+            var resStr = result ?? "null";
+            Trace.WriteLine($"T{Thread.CurrentThread.ManagedThreadId,3} Get: exit, got return value: {resStr}");
             return result;
         }
 
@@ -106,43 +107,39 @@ namespace BlockingQueue
         /// </summary>
         public void Disable()
         {
+            Trace.WriteLine($"T{Thread.CurrentThread.ManagedThreadId,3} Disable: enter");
 #if DEBUG
             Thread.Sleep(rnd.Next(OPERATION_PAUSE * 8));
 #endif
-            Trace.WriteLine($"T{Thread.CurrentThread.ManagedThreadId} Disable: ( )");
-            if (!_isDisabled) // fast check
+            // fast check
+            if (!_isDisabled)
             {
                 lock (_lock)
                 {
-                    if (_isDisabled) // check if not locked by this time
+                    // check if still not disabled by this time
+                    if (_isDisabled)
                     {
-                        Trace.WriteLine($"T{Thread.CurrentThread.ManagedThreadId} Disable: already disabled (inside lock)");
-                        return;
+                        Trace.WriteLine($"T{Thread.CurrentThread.ManagedThreadId,3} Disable: already disabled (inside lock)");
                     }
-
-                    _isDisabled = true;
-                    // TODO free all waiting threads
-                    var threadsToFree = _waitingThreads;
-                    if (threadsToFree > 0)
+                    else
                     {
-                        //for (int i = 0; i < threadsToFree; i += 1)
-                        //{
+                        _isDisabled = true;
+                        // TODO free all waiting threads
+                        var threadsToFree = _waitingThreads;
+                        if (threadsToFree > 0)
+                        {
+                            // release all waiting threads
                             Monitor.PulseAll(_lock);
-                        //}
-                        Trace.WriteLine($"T{Thread.CurrentThread.ManagedThreadId} Disable: released {threadsToFree} threads");
-
-                        //var semCount = _empty.Release(threadsToFree); // semaphore
-                        // Trace.WriteLine($"T{Thread.CurrentThread.ManagedThreadId} Disable: released {threadsToFree} threads, PREV_SEM={semCount}"); // semaphore
+                            Trace.WriteLine($"T{Thread.CurrentThread.ManagedThreadId,3} Disable: released {threadsToFree} waiting threads");
+                        }
                     }
                 }
             }
-#if DEBUG
             else
             {
-                Trace.WriteLine($"T{Thread.CurrentThread.ManagedThreadId} Disable: already disabled (exit with no lock)");
+                Trace.WriteLine($"T{Thread.CurrentThread.ManagedThreadId,3} Disable: already disabled (fast check)");
             }
-#endif
-            Trace.WriteLine($"T{Thread.CurrentThread.ManagedThreadId} Disable: exit");
+            Trace.WriteLine($"T{Thread.CurrentThread.ManagedThreadId,3} Disable: exit");
         }
     }
 }

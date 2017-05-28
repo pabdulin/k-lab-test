@@ -12,9 +12,7 @@ namespace BlockingQueueApp
         public static void Main(string[] args)
         {
             Trace.Listeners.Add(new ConsoleTraceListener());
-
-            TestMultithreadReadWrite();
-
+            TestMultiThreadReadWrite();
             if (Debugger.IsAttached)
             {
                 Console.WriteLine("---");
@@ -23,13 +21,12 @@ namespace BlockingQueueApp
             }
         }
 
-        private static void TestMultithreadReadWrite()
+        private static void TestMultiThreadReadWrite()
         {
             const int THREAD_COUNT = 5;
-
-            Thread[] putThreads = new Thread[THREAD_COUNT - 2];
-            Thread[] getThreads = new Thread[THREAD_COUNT + 2];
-            Thread[] disableThreads = new Thread[THREAD_COUNT - 2];
+            Thread[] putThreads = new Thread[THREAD_COUNT];
+            Thread[] getThreads = new Thread[THREAD_COUNT + (THREAD_COUNT / 2)];
+            Thread[] disableThreads = new Thread[THREAD_COUNT / 2];
 
             for (int i = 0; i < getThreads.Length; i += 1)
             {
@@ -78,6 +75,9 @@ namespace BlockingQueueApp
             {
                 disableThreads[i].Join();
             }
+
+            Console.WriteLine("---");
+            Console.WriteLine("All threads completed without deadlocks.");
         }
     }
 }
