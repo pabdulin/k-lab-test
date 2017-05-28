@@ -11,7 +11,7 @@ namespace BlockingQueueApp
 
         public static void Main(string[] args)
         {
-            Trace.Listeners.Add(new ConsoleTraceListener());
+            Debug.Listeners.Add(new ConsoleTraceListener());
             TestMultiThreadReadWrite();
             if (Debugger.IsAttached)
             {

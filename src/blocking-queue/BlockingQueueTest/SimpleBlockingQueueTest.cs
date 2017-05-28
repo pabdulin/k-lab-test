@@ -1,5 +1,4 @@
-﻿using System;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
+﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
 using BlockingQueue;
 using System.Threading;
 
@@ -15,10 +14,18 @@ namespace BlockingQueueTest
         public void ShouldPutAndGet()
         {
             SimpleBlockingQueue target = new SimpleBlockingQueue();
-            int testValue = 1;
-            target.Put(testValue);
-            var testValueBack = target.Get();
-            Assert.AreEqual(testValue, testValueBack);
+            {
+                object testValue = 1;
+                target.Put(testValue);
+                var testValueBack = target.Get();
+                Assert.AreEqual(testValue, testValueBack);
+            }
+            {
+                object testValue = "test";
+                target.Put(testValue);
+                var testValueBack = target.Get();
+                Assert.AreEqual(testValue, testValueBack);
+            }
         }
 
         [TestMethod]
@@ -28,9 +35,13 @@ namespace BlockingQueueTest
             SimpleBlockingQueue target = new SimpleBlockingQueue();
             int testValue = 1;
             target.Put(testValue);
+            var testValueBackBeforeDisable = target.Get();
+            Assert.AreEqual(testValue, testValueBackBeforeDisable);
+
+            target.Put(testValue);
             target.Disable();
-            var testValueBack = target.Get();
-            Assert.AreEqual(null, testValueBack);
+            var testValueBackAfterDisable = target.Get();
+            Assert.AreEqual(null, testValueBackAfterDisable);
         }
 
         [TestMethod]
@@ -43,22 +54,25 @@ namespace BlockingQueueTest
 
         [TestMethod]
         [Timeout(1000)]
-        public void Multithread()
+        public void MultiThreadStatic1()
         {
             Thread[] threads = new Thread[2];
             object _res1 = null;
             object _res2 = null;
+            object _res3 = null;
 
             threads[0] = new Thread(() =>
             {
                 _res1 = _static1.Get();
                 _res2 = _static1.Get();
+                _res3 = _static1.Get();
             });
 
             threads[1] = new Thread(() =>
             {
                 _static1.Put(1);
-                _static1.Put(2);
+                _static1.Put(10f);
+                _static1.Put("hello");
             });
 
             for (int i = 0; i < threads.Length; i += 1)
@@ -72,7 +86,8 @@ namespace BlockingQueueTest
             }
 
             Assert.AreEqual(1, _res1);
-            Assert.AreEqual(2, _res2);
+            Assert.AreEqual(10f, _res2);
+            Assert.AreEqual("hello", _res3);
         }
     }
 }

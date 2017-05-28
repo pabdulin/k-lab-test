@@ -21,7 +21,7 @@ namespace BlockingQueue
         /// </summary>
         public void Put(object o)
         {
-            Trace.WriteLine($"T{Thread.CurrentThread.ManagedThreadId,3} Put {o}: enter");
+            Debug.WriteLine($"T{Thread.CurrentThread.ManagedThreadId,3} Put {o}: enter");
 #if DEBUG
             Thread.Sleep(rnd.Next(OPERATION_PAUSE));
 #endif
@@ -33,13 +33,13 @@ namespace BlockingQueue
                     // check if was disabled while we were waiting
                     if (_isDisabled)
                     {
-                        Trace.WriteLine($"T{Thread.CurrentThread.ManagedThreadId,3} Put {o}: Queue was disabled (in lock)");
+                        Debug.WriteLine($"T{Thread.CurrentThread.ManagedThreadId,3} Put {o}: Queue was disabled (in lock)");
                     }
                     else
                     {
                         _store.Enqueue(o);
-                        Trace.WriteLine($"T{Thread.CurrentThread.ManagedThreadId,3} Put {o}: value stored");
-                        Trace.WriteLine($"T{Thread.CurrentThread.ManagedThreadId,3} Put {o}: About to pulse..");
+                        Debug.WriteLine($"T{Thread.CurrentThread.ManagedThreadId,3} Put {o}: value stored");
+                        Debug.WriteLine($"T{Thread.CurrentThread.ManagedThreadId,3} Put {o}: About to pulse..");
                         // release one thread
                         Monitor.Pulse(_lock);
                     }
@@ -47,9 +47,9 @@ namespace BlockingQueue
             }
             else
             {
-                Trace.WriteLine($"T{Thread.CurrentThread.ManagedThreadId,3} Put {o}: Queue is disabled (fast check)");
+                Debug.WriteLine($"T{Thread.CurrentThread.ManagedThreadId,3} Put {o}: Queue is disabled (fast check)");
             }
-            Trace.WriteLine($"T{Thread.CurrentThread.ManagedThreadId,3} Put {o}: exit");
+            Debug.WriteLine($"T{Thread.CurrentThread.ManagedThreadId,3} Put {o}: exit");
         }
 
         /// <summary>
@@ -58,7 +58,7 @@ namespace BlockingQueue
         /// </summary>
         public object Get()
         {
-            Trace.WriteLine($"T{Thread.CurrentThread.ManagedThreadId,3} Get: enter");
+            Debug.WriteLine($"T{Thread.CurrentThread.ManagedThreadId,3} Get: enter");
 #if DEBUG
             Thread.Sleep(rnd.Next(OPERATION_PAUSE));
 #endif
@@ -66,7 +66,7 @@ namespace BlockingQueue
             // fast unsafe check
             if (!_isDisabled)
             {
-                Trace.WriteLine($"T{Thread.CurrentThread.ManagedThreadId,3} Get: queue not disabled (fast check)");
+                Debug.WriteLine($"T{Thread.CurrentThread.ManagedThreadId,3} Get: queue not disabled (fast check)");
                 lock (_lock)
                 {
                     _waitingThreads += 1;
@@ -82,21 +82,21 @@ namespace BlockingQueue
                     // check if was disabled while we were waiting for next item
                     if (_isDisabled)
                     {
-                        Trace.WriteLine($"T{Thread.CurrentThread.ManagedThreadId,3} Get: wait complete, but queue is disabled now (in lock)");
+                        Debug.WriteLine($"T{Thread.CurrentThread.ManagedThreadId,3} Get: wait complete, but queue is disabled now (in lock)");
                     }
                     else
                     {
-                        Trace.WriteLine($"T{Thread.CurrentThread.ManagedThreadId,3} Get: wait complete, proceed to get value");
+                        Debug.WriteLine($"T{Thread.CurrentThread.ManagedThreadId,3} Get: wait complete, proceed to get value");
                         result = _store.Dequeue();
                     }
                 }
             }
             else
             {
-                Trace.WriteLine($"T{Thread.CurrentThread.ManagedThreadId,3} Get: queue is disabled (no lock)");
+                Debug.WriteLine($"T{Thread.CurrentThread.ManagedThreadId,3} Get: queue is disabled (no lock)");
             }
             var resStr = result ?? "null";
-            Trace.WriteLine($"T{Thread.CurrentThread.ManagedThreadId,3} Get: exit, got return value: {resStr}");
+            Debug.WriteLine($"T{Thread.CurrentThread.ManagedThreadId,3} Get: exit, got return value: {resStr}");
             return result;
         }
 
@@ -107,9 +107,9 @@ namespace BlockingQueue
         /// </summary>
         public void Disable()
         {
-            Trace.WriteLine($"T{Thread.CurrentThread.ManagedThreadId,3} Disable: enter");
+            Debug.WriteLine($"T{Thread.CurrentThread.ManagedThreadId,3} Disable: enter");
 #if DEBUG
-            Thread.Sleep(rnd.Next(OPERATION_PAUSE * 8));
+            Thread.Sleep(rnd.Next(OPERATION_PAUSE));
 #endif
             // fast check
             if (!_isDisabled)
@@ -119,22 +119,22 @@ namespace BlockingQueue
                     // check if still not disabled by this time
                     if (_isDisabled)
                     {
-                        Trace.WriteLine($"T{Thread.CurrentThread.ManagedThreadId,3} Disable: already disabled (inside lock)");
+                        Debug.WriteLine($"T{Thread.CurrentThread.ManagedThreadId,3} Disable: already disabled (inside lock)");
                     }
                     else
                     {
                         _isDisabled = true;
                         // release all waiting threads
                         Monitor.PulseAll(_lock);
-                        Trace.WriteLine($"T{Thread.CurrentThread.ManagedThreadId,3} Disable: released {_waitingThreads} waiting threads");
+                        Debug.WriteLine($"T{Thread.CurrentThread.ManagedThreadId,3} Disable: released {_waitingThreads} waiting threads");
                     }
                 }
             }
             else
             {
-                Trace.WriteLine($"T{Thread.CurrentThread.ManagedThreadId,3} Disable: already disabled (fast check)");
+                Debug.WriteLine($"T{Thread.CurrentThread.ManagedThreadId,3} Disable: already disabled (fast check)");
             }
-            Trace.WriteLine($"T{Thread.CurrentThread.ManagedThreadId,3} Disable: exit");
+            Debug.WriteLine($"T{Thread.CurrentThread.ManagedThreadId,3} Disable: exit");
         }
     }
 }
