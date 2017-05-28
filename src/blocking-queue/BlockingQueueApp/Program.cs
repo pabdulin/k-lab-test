@@ -23,7 +23,7 @@ namespace BlockingQueueApp
 
         private static void TestMultiThreadReadWrite()
         {
-            const int THREAD_COUNT = 50;
+            const int THREAD_COUNT = 5;
             Thread[] putThreads = new Thread[THREAD_COUNT];
             Thread[] getThreads = new Thread[THREAD_COUNT + (THREAD_COUNT / 2)];
             Thread[] disableThreads = new Thread[THREAD_COUNT / 2];
