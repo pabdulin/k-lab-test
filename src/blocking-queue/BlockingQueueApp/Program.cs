@@ -11,8 +11,10 @@ namespace BlockingQueueApp
 
         public static void Main(string[] args)
         {
-            Debug.Listeners.Add(new ConsoleTraceListener());
-            TestMultiThreadReadWrite();
+            var console = new ConsoleTraceListener();
+            Debug.Listeners.RemoveAt(0);
+            Debug.Listeners.Add(console);
+            Test();
             if (Debugger.IsAttached)
             {
                 Console.WriteLine("---");
@@ -21,7 +23,7 @@ namespace BlockingQueueApp
             }
         }
 
-        private static void TestMultiThreadReadWrite()
+        private static void Test()
         {
             const int THREAD_COUNT = 5;
             Thread[] putThreads = new Thread[THREAD_COUNT];
