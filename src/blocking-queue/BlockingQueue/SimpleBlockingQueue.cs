@@ -10,7 +10,7 @@ namespace BlockingQueue
         private bool _isDisabled = false;
         private Queue<object> _store = new Queue<object>();
         //private readonly AutoResetEvent _empty = new AutoResetEvent(false);
-        private readonly Semaphore _empty = new Semaphore(0, int.MaxValue);
+        //private readonly Semaphore _empty = new Semaphore(0, int.MaxValue);
         private readonly object _lock = new object();
         private int _waitingThreads = 0;
 #if DEBUG
@@ -38,10 +38,10 @@ namespace BlockingQueue
                     }
                     _store.Enqueue(o);
                     Trace.WriteLine($"T{Thread.CurrentThread.ManagedThreadId} Put: About to signal..");
-                    //var signalSuccess = _empty.Set();
-                    var semCount = _empty.Release();
+                    //var semCount = _empty.Release(); // semaphore
+                    Monitor.Pulse(_lock);
 
-                    Trace.WriteLine($"T{Thread.CurrentThread.ManagedThreadId} Put: PREV_SEM={semCount}");
+                    //Trace.WriteLine($"T{Thread.CurrentThread.ManagedThreadId} Put: PREV_SEM={semCount}"); // semaphore
                 }
             }
 #if DEBUG
@@ -68,9 +68,13 @@ namespace BlockingQueue
             {
                 Trace.WriteLine($"T{Thread.CurrentThread.ManagedThreadId} Get: Queue not disabled, wait..");
                 Interlocked.Increment(ref _waitingThreads);
-                _empty.WaitOne();
+                //_empty.WaitOne(); // semaphore
                 lock (_lock)
                 {
+                    while (_store.Count == 0 && !_isDisabled)
+                    {
+                        Monitor.Wait(_lock);
+                    }
                     _waitingThreads -= 1;
                     if (_isDisabled)
                     {
@@ -121,8 +125,14 @@ namespace BlockingQueue
                     var threadsToFree = _waitingThreads;
                     if (threadsToFree > 0)
                     {
-                        var semCount = _empty.Release(threadsToFree);
-                        Trace.WriteLine($"T{Thread.CurrentThread.ManagedThreadId} Disable: released {threadsToFree} threads, PREV_SEM={semCount}");
+                        //for (int i = 0; i < threadsToFree; i += 1)
+                        //{
+                            Monitor.PulseAll(_lock);
+                        //}
+                        Trace.WriteLine($"T{Thread.CurrentThread.ManagedThreadId} Disable: released {threadsToFree} threads");
+
+                        //var semCount = _empty.Release(threadsToFree); // semaphore
+                        // Trace.WriteLine($"T{Thread.CurrentThread.ManagedThreadId} Disable: released {threadsToFree} threads, PREV_SEM={semCount}"); // semaphore
                     }
                 }
             }
