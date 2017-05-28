@@ -33,16 +33,13 @@ namespace BlockingQueueTest
             Assert.AreEqual(null, testValueBack);
         }
 
-        //[TestMethod]
-        //[Timeout(100)]
-        //public void ShouldBlockOnEmptyQueue()
-        //{
-        //    SimpleBlockingQueue target = new SimpleBlockingQueue();
-        //    //int testValue = 1;
-        //    //target.Put(testValue);
-        //    //target.Disable();
-        //    var testValueBack = target.Get();
-        //}
+        [TestMethod]
+        [Timeout(1000)]
+        public void ShouldBlockOnEmptyQueue_TestMustFail()
+        {
+            SimpleBlockingQueue target = new SimpleBlockingQueue();
+            var testValueBack = target.Get();
+        }
 
         [TestMethod]
         [Timeout(1000)]
