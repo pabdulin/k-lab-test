@@ -124,14 +124,9 @@ namespace BlockingQueue
                     else
                     {
                         _isDisabled = true;
-                        // TODO free all waiting threads
-                        var threadsToFree = _waitingThreads;
-                        if (threadsToFree > 0)
-                        {
-                            // release all waiting threads
-                            Monitor.PulseAll(_lock);
-                            Trace.WriteLine($"T{Thread.CurrentThread.ManagedThreadId,3} Disable: released {threadsToFree} waiting threads");
-                        }
+                        // release all waiting threads
+                        Monitor.PulseAll(_lock);
+                        Trace.WriteLine($"T{Thread.CurrentThread.ManagedThreadId,3} Disable: released {_waitingThreads} waiting threads");
                     }
                 }
             }
