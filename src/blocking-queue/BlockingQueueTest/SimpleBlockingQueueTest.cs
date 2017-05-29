@@ -7,8 +7,6 @@ namespace BlockingQueueTest
     [TestClass]
     public class SimpleBlockingQueueTest
     {
-        private static readonly SimpleBlockingQueue _static1 = new SimpleBlockingQueue();
-
         [TestMethod]
         [Timeout(1000)]
         public void ShouldPutAndGet()
@@ -46,7 +44,7 @@ namespace BlockingQueueTest
 
         [TestMethod]
         [Timeout(1000)]
-        public void ShouldBlockOnEmptyQueue_TestMustFail()
+        public void ShouldWaitOnEmptyQueue_TestMustFail()
         {
             SimpleBlockingQueue target = new SimpleBlockingQueue();
             var testValueBack = target.Get();
@@ -54,40 +52,97 @@ namespace BlockingQueueTest
 
         [TestMethod]
         [Timeout(1000)]
-        public void MultiThreadStatic1()
+        public void ShouldNotAlterOrder()
         {
-            Thread[] threads = new Thread[2];
+            var blockingQueue = new SimpleBlockingQueue();
             object _res1 = null;
             object _res2 = null;
             object _res3 = null;
 
-            threads[0] = new Thread(() =>
+            var thread1 = new Thread(() =>
             {
-                _res1 = _static1.Get();
-                _res2 = _static1.Get();
-                _res3 = _static1.Get();
+                _res1 = blockingQueue.Get();
+                _res2 = blockingQueue.Get();
+                _res3 = blockingQueue.Get();
             });
+            thread1.Start();
 
-            threads[1] = new Thread(() =>
+            var thread2 = new Thread(() =>
             {
-                _static1.Put(1);
-                _static1.Put(10f);
-                _static1.Put("hello");
+                blockingQueue.Put(1);
+                blockingQueue.Put(10f);
+                blockingQueue.Put("hello");
             });
+            thread2.Start();
 
-            for (int i = 0; i < threads.Length; i += 1)
-            {
-                threads[i].Start();
-            }
-
-            for (int i = 0; i < threads.Length; i += 1)
-            {
-                threads[i].Join();
-            }
+            thread1.Join();
+            thread2.Join();
 
             Assert.AreEqual(1, _res1);
             Assert.AreEqual(10f, _res2);
             Assert.AreEqual("hello", _res3);
+        }
+
+        [TestMethod]
+        [Timeout(1000)]
+        public void ShouldNotDeadlock()
+        {
+            SimpleBlockingQueue _bq = new SimpleBlockingQueue();
+
+            const int THREAD_COUNT = 50;
+            Thread[] putThreads = new Thread[THREAD_COUNT];
+            Thread[] getThreads = new Thread[THREAD_COUNT + (THREAD_COUNT / 2)];
+            Thread[] disableThreads = new Thread[THREAD_COUNT / 2];
+
+            for (int i = 0; i < getThreads.Length; i += 1)
+            {
+                getThreads[i] = new Thread(() =>
+                {
+                    _bq.Get();
+                    _bq.Get();
+                });
+                getThreads[i].Start();
+
+            }
+
+            for (int i = 0; i < putThreads.Length; i += 1)
+            {
+                var capture = i;
+                putThreads[i] = new Thread(() =>
+                {
+                    _bq.Put(capture);
+                    _bq.Put(capture + putThreads.Length);
+                });
+                putThreads[i].Start();
+
+            }
+
+            for (int i = 0; i < disableThreads.Length; i += 1)
+            {
+                disableThreads[i] = new Thread(() =>
+                {
+                    _bq.Disable();
+                });
+                disableThreads[i].Start();
+
+            }
+
+            for (int i = 0; i < putThreads.Length; i += 1)
+            {
+                putThreads[i].Join();
+            }
+
+            for (int i = 0; i < getThreads.Length; i += 1)
+            {
+                getThreads[i].Join();
+            }
+
+            for (int i = 0; i < disableThreads.Length; i += 1)
+            {
+                disableThreads[i].Join();
+            }
+
+            // if we get here then there was no deadlock
         }
     }
 }
